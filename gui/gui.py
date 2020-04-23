@@ -36,7 +36,7 @@ class TaskParametersGroup(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel()
         label.setText("Математическое ожидание с.в.")
         self.__q_input = QtWidgets.QLineEdit()
-        self.__q_input.setText("1")
+        self.__q_input.setText("10")
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__q_input, str_number, 1)
 
@@ -44,7 +44,7 @@ class TaskParametersGroup(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel()
         label.setText("Дисперсия с.в.")
         self.__d_input = QtWidgets.QLineEdit()
-        self.__d_input.setText("1")
+        self.__d_input.setText("5")
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__d_input, str_number, 1)
 
@@ -80,7 +80,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel()
         label.setText("Количество экспериментов")
         self.__experiments_input = QtWidgets.QLineEdit()
-        self.__experiments_input.setText("1000")
+        self.__experiments_input.setText("100")
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__experiments_input, str_number, 1)
 
@@ -88,7 +88,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel()
         label.setText("Границы")
         self.__borders_input = QtWidgets.QLineEdit()
-        self.__borders_input.setText("0.0 0.4 0.8 1.2 1.6 2.0 2.4 2.8 3.2 3.6 4.0")
+        self.__borders_input.setText("80 85 90 95 100 105 110 115 120 125")
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__borders_input, str_number, 1)
 
@@ -98,10 +98,11 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
     def __button_clicked(self):
         experiments_count = int(self.__experiments_input.text())
         borders = [float(x) for x in (self.__borders_input.text()).split(" ")]
-        self.__solver.make_experemets(experiments_count)
-        result = self.__solver.return_result()
-        z, f, n, norm = self.__solver.generate_table(borders)
-        self.__update_tables(result, z, f, n, norm)
+
+        result = self.__solver.make_experemets(experiments_count)
+        metrics = self.__solver.get_metrics(result)
+        z, f, n, norm = self.__solver.get_histogram(result, borders)
+        self.__update_tables(result, metrics, z, f, n, norm)
 
     def __init_button(self, str_number: int):
         button = QtWidgets.QPushButton()
@@ -124,6 +125,22 @@ class ResultTable(QtWidgets.QTableWidget):
         self.setColumnCount(len(result))
         for i in range(len(result)):
             self.setItem(0, i, self.__create_cell(str(result[i])))
+
+class MetricsTable(QtWidgets.QTableWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setRowCount(1)
+        self.setColumnCount(8)
+        self.setHorizontalHeaderLabels(("Eη", "x", "|Eη - x|", "Dη", "S^2", "|Dη - S^2|", "Me", "R"))
+
+    def __create_cell(self, text):
+        cell = QtWidgets.QTableWidgetItem(text)
+        cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
+        return cell
+
+    def update_table(self, metrics: list):
+        for i in range(8):
+            self.setItem(0, i, self.__create_cell(str(metrics[i])))
 
 class HistogramTable(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
@@ -149,8 +166,9 @@ class ResultGroup(QtWidgets.QGroupBox):
         self.setTitle("Результаты серии экспериментов")
         self.__grid = QtWidgets.QGridLayout(self)
         self.__init_result_table(0)
-        self.__init_result_histogram(2)
-        self.__init_max(4)
+        self.__init_metrics_table(2)
+        self.__init_result_histogram(4)
+        self.__init_max(6)
 
     def __init_result_table(self, str_number: int):
         label = QtWidgets.QLabel()
@@ -158,6 +176,13 @@ class ResultGroup(QtWidgets.QGroupBox):
         self.__result = ResultTable()
         self.__grid.addWidget(label, str_number, 0, 1, 2)
         self.__grid.addWidget(self.__result, str_number + 1, 0, 1, 2)
+
+    def __init_metrics_table(self, str_number: int):
+        label = QtWidgets.QLabel()
+        label.setText("Метрики случайной величины")
+        self.__metrics = MetricsTable()
+        self.__grid.addWidget(label, str_number, 0, 1, 2)
+        self.__grid.addWidget(self.__metrics, str_number + 1, 0, 1, 2)
 
     def __init_result_histogram(self, str_number: int):
         label = QtWidgets.QLabel()
@@ -174,15 +199,16 @@ class ResultGroup(QtWidgets.QGroupBox):
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__max, str_number, 1)
     
-    def update_tables(self, result, z, f, n, norm):
+    def update_tables(self, result, metrics, z, f, n, norm):
         self.__result.update_table(result)
+        self.__metrics.update_table(metrics)
         self.__histogram.update_table(z, f, n)
         self.__max.setText(str(norm))
 
 class MainWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.__solver = task18(10, 1, 1)
+        self.__solver = task18()
         self.__grid = QtWidgets.QGridLayout(self)
 
         self.__task_parameters = TaskParametersGroup()
