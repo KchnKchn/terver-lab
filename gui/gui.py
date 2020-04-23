@@ -248,6 +248,6 @@ class GUI(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.resize(1280, 720)
-        self.setWindowTitle("lab2")
+        self.setWindowTitle("Лабораторная работа по теории вероятности")
         self.__central = MainWidget(self)
         self.setCentralWidget(self.__central)
