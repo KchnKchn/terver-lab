@@ -121,7 +121,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         axs[0].grid(True)
         axs[0].plot(result, F, label="Аналитическая функция распределения")
         axs[0].step(result, Fc, label="Выборочная функция распределения")
-        axs[0].legend(title="D = {0:0.3f}".format(norm))
+        axs[0].legend(title="D = {0:0.3f}".format(norm), loc="lower right")
 
         axs[1].set_title("Гистограмма")
         axs[1].grid(True)
