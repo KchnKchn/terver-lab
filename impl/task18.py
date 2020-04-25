@@ -22,30 +22,43 @@ class task18:
         random.seed(seed)
 
     def make_experemets(self, experiment_count: int):
-        result = []
+        result = np.zeros(shape=(experiment_count), dtype=float)
         for i in range(experiment_count):
             job_time = self.__make_experiment()
             job_time = self.__truncate(job_time)
-            result.append(job_time)
+            result[i] = job_time
         result.sort()
         return result
 
-    def get_metrics(self, result: list):
+    def get_metrics(self, result: np.array):
         e = self.__device_count * (self.__a + 1 / self.__k)
         x = np.mean(result)
         d = self.__device_count / (self.__k ** 2)
         s = np.std(result) ** 2
         me = np.median(result)
         r = result[-1] - result[0]
-        return [e, x, abs(e-x), d, s, abs(d-s), me, r]
+        return np.asarray([e, x, abs(e-x), d, s, abs(d-s), me, r], dtype=float)
 
-    def get_histogram(self, results: list, borders: list):
-        n = len(results)
+    def get_graphics(self, results: np.array):
+        n = results.shape[0]
+        F = np.zeros(shape=(n), dtype=float)
+        Fc = np.zeros(shape=(n), dtype=float)
+        norm = 0
+        for i in range(n):
+            F_elem = self.__F(results[i])
+            Fc_elem = self.__Fc(results, results[i])
+            norm = max(norm, abs(F_elem - Fc_elem))
+            F[i] = F_elem
+            Fc[i] = Fc_elem
+        return F, Fc, norm
+
+    def get_histogram(self, results: np.array, borders: np.array):
+        n = results.shape[0]
         z_array = np.zeros(shape=(len(borders)-1), dtype=float)
         f_array = np.zeros(shape=(len(borders)-1), dtype=float)
         n_array = np.zeros(shape=(len(borders)-1), dtype=float)
         norm = 0.0
-        for i in range(len(borders) - 1):
+        for i in range(borders.shape[0] - 1):
             z_array[i] = (borders[i] + borders[i + 1]) / 2
             f_array[i] = self.__f(z_array[i])
             for result in results:
@@ -66,6 +79,30 @@ class task18:
             # result = self.__k * math.exp(-self.__k * (y - self.__a))
             result = self.__k ** self.__device_count / math.gamma(self.__device_count) * (y - self.__a) ** (self.__device_count - 1) * math.exp(-self.__k * (y - self.__a))
         return result
+
+    def __calculate_integral(self, y: float):
+        left = self.__a
+        right = y
+        n = 100
+        h = (right - left) / n
+        result = (self.__f(left) + self.__f(right)) / 2
+        for i in range(1, n):
+            result += self.__f(left + i * h)
+        result *= h
+        return result
+
+    def __F(self, y: float):
+        result = 0.0
+        if (y >= self.__a):
+            result = self.__calculate_integral(y)
+        return result
+
+    def __Fc(self, results: np.array, y: float):
+        Fc = 0.0
+        for result in results:
+            if result < y:
+                Fc += 1
+        return Fc / len(results)
 
     def __get_device_time(self):
         return self.__a - math.log(1 - random.random()) / self.__k

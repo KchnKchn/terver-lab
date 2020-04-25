@@ -1,5 +1,7 @@
 from  PyQt5 import QtWidgets, QtGui, QtCore
 from impl.task18 import task18
+import matplotlib.pyplot as plt
+import numpy as np
 
 class TaskParametersGroup(QtWidgets.QGroupBox):
     def __init__(self, parent=None):
@@ -96,13 +98,36 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         self.__update_tables = f
 
     def __button_clicked(self):
+        #parse forms
         experiments_count = int(self.__experiments_input.text())
-        borders = [float(x) for x in (self.__borders_input.text()).split(" ")]
+        borders = np.asarray([float(x) for x in (self.__borders_input.text()).split(" ")], dtype=float)
 
+        #make experiments
         result = self.__solver.make_experemets(experiments_count)
+
+        #print tables
         metrics = self.__solver.get_metrics(result)
         z, f, n, norm = self.__solver.get_histogram(result, borders)
         self.__update_tables(result, metrics, z, f, n, norm)
+
+        #print graphics
+        plt.close("all")
+        F, Fc, norm = self.__solver.get_graphics(result)
+        fig, axs = plt.subplots(2, 1, num="Графики")
+
+        axs[0].set_title("Функция распределения и выборочная функция распределения")
+        axs[0].set_xlabel("Значения случайной величины")
+        axs[0].set_ylabel("Вероятность события")
+        axs[0].grid(True)
+        axs[0].plot(result, F, label="Аналитическая функция распределения")
+        axs[0].plot(result, Fc, label="Выборочная функция распределения")
+        axs[0].legend(title="D = {0:0.3f}".format(norm))
+
+        axs[1].set_title("Гистограмма")
+        axs[1].grid(True)
+        len=np.asarray([borders[i + 1] - borders[i] for i in range(borders.shape[0] - 1)], dtype=float)
+        axs[1].bar(borders[:-1], n, width=len, align="edge")
+        fig.show()
 
     def __init_button(self, str_number: int):
         button = QtWidgets.QPushButton()
@@ -114,17 +139,18 @@ class ResultTable(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def __create_cell(self, text):
+    def __create_cell(self, text: str):
         cell = QtWidgets.QTableWidgetItem(text)
         cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         return cell
 
-    def update_table(self, result):
+    def update_table(self, result: np.array):
         self.clear()
         self.setRowCount(1)
         self.setColumnCount(len(result))
         for i in range(len(result)):
             self.setItem(0, i, self.__create_cell(str(result[i])))
+        self.resizeColumnsToContents()
 
 class MetricsTable(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
@@ -133,25 +159,26 @@ class MetricsTable(QtWidgets.QTableWidget):
         self.setColumnCount(8)
         self.setHorizontalHeaderLabels(("Eη", "x", "|Eη - x|", "Dη", "S^2", "|Dη - S^2|", "Me", "R"))
 
-    def __create_cell(self, text):
+    def __create_cell(self, text: str):
         cell = QtWidgets.QTableWidgetItem(text)
         cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         return cell
 
-    def update_table(self, metrics: list):
+    def update_table(self, metrics: np.array):
         for i in range(8):
             self.setItem(0, i, self.__create_cell(str(metrics[i])))
+        self.resizeColumnsToContents()
 
 class HistogramTable(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def __create_cell(self, text):
+    def __create_cell(self, text: str):
         cell = QtWidgets.QTableWidgetItem(text)
         cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         return cell
 
-    def update_table(self, z_array, f_array, n_array):
+    def update_table(self, z_array: np.array, f_array: np.array, n_array: np.array):
         self.clear()
         self.setRowCount(3)
         self.setColumnCount(z_array.shape[0])
@@ -159,6 +186,7 @@ class HistogramTable(QtWidgets.QTableWidget):
             self.setItem(0, i, self.__create_cell(str(z_array[i])))
             self.setItem(1, i, self.__create_cell(str(f_array[i])))
             self.setItem(2, i, self.__create_cell(str(n_array[i])))
+        self.resizeColumnsToContents()
 
 class ResultGroup(QtWidgets.QGroupBox):
     def __init__(self, parent=None):
@@ -199,7 +227,7 @@ class ResultGroup(QtWidgets.QGroupBox):
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__max, str_number, 1)
     
-    def update_tables(self, result, metrics, z, f, n, norm):
+    def update_tables(self, result: np.array, metrics: np.array, z: np.array, f: np.array, n: np.array, norm: float):
         self.__result.update_table(result)
         self.__metrics.update_table(metrics)
         self.__histogram.update_table(z, f, n)
