@@ -2,6 +2,7 @@ import math
 import random
 import argparse
 import numpy as np
+import scipy.integrate
 
 class task18:
     def __init__(self):
@@ -46,9 +47,8 @@ class task18:
         norm = 0
         for i in range(n):
             F_elem = self.__F(results[i])
-            #Fc_elem = self.__Fc(results, results[i])
             Fc_elem = i / n
-            norm = max(norm, abs(F_elem - Fc_elem))
+            norm = max(norm, max(abs(i / n - F_elem), abs(F_elem - (i - 1) / n)))
             F[i] = F_elem
             Fc[i] = Fc_elem
         return F, Fc, norm
@@ -77,25 +77,17 @@ class task18:
     def __f(self, y: float):
         result = 0.0
         if (y >= self.__a):
-            # result = self.__k * math.exp(-self.__k * (y - self.__a))
             result = self.__k ** self.__device_count / math.gamma(self.__device_count) * (y - self.__a) ** (self.__device_count - 1) * math.exp(-self.__k * (y - self.__a))
-        return result
-
-    def __calculate_integral(self, y: float):
-        left = self.__a
-        right = y
-        n = 100
-        h = (right - left) / n
-        result = (self.__f(left) + self.__f(right)) / 2
-        for i in range(1, n):
-            result += self.__f(left + i * h)
-        result *= h
         return result
 
     def __F(self, y: float):
         result = 0.0
         if (y >= self.__a):
-            result = self.__calculate_integral(y)
+            result, _ = scipy.integrate.quad(self.__f, self.__a, y)
+            #f = lambda x:(x-self.__a)**(self.__device_count-1)*math.exp(-self.__k*(x-self.__a))
+            #result, _ = scipy.integrate.quad(f, self.__a, y)
+            #result *= self.__k ** self.__device_count / math.factorial(self.__device_count - 1)
+            #result = 1 / math.gamma(self.__device_count) * math.integral(exp(-t) * t ** (self.__device_count - 1), t=0..x)
         return result
 
     def __Fc(self, results: np.array, y: float):
