@@ -120,12 +120,12 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         axs[0].set_ylabel("Вероятность события")
         axs[0].grid(True)
         axs[0].plot(result, F, label="Аналитическая функция распределения")
-        axs[0].plot(result, Fc, label="Выборочная функция распределения")
+        axs[0].step(result, Fc, label="Выборочная функция распределения")
         axs[0].legend(title="D = {0:0.3f}".format(norm))
 
         axs[1].set_title("Гистограмма")
         axs[1].grid(True)
-        len=np.asarray([borders[i + 1] - borders[i] for i in range(borders.shape[0] - 1)], dtype=float)
+        len = np.asarray([borders[i + 1] - borders[i] for i in range(borders.shape[0] - 1)], dtype=float)
         axs[1].bar(borders[:-1], n, width=len, align="edge")
         fig.show()
 

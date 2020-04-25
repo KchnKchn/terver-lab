@@ -46,7 +46,8 @@ class task18:
         norm = 0
         for i in range(n):
             F_elem = self.__F(results[i])
-            Fc_elem = self.__Fc(results, results[i])
+            #Fc_elem = self.__Fc(results, results[i])
+            Fc_elem = i / n
             norm = max(norm, abs(F_elem - Fc_elem))
             F[i] = F_elem
             Fc[i] = Fc_elem
@@ -102,7 +103,7 @@ class task18:
         for result in results:
             if result < y:
                 Fc += 1
-        return Fc / len(results)
+        return Fc / results.shape[0]
 
     def __get_device_time(self):
         return self.__a - math.log(1 - random.random()) / self.__k
