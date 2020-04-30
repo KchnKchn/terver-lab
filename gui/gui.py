@@ -82,7 +82,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel()
         label.setText("Количество экспериментов")
         self.__experiments_input = QtWidgets.QLineEdit()
-        self.__experiments_input.setText("100")
+        self.__experiments_input.setText("1000")
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__experiments_input, str_number, 1)
 
@@ -90,7 +90,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         label = QtWidgets.QLabel()
         label.setText("Границы")
         self.__borders_input = QtWidgets.QLineEdit()
-        self.__borders_input.setText("80 85 90 95 100 105 110 115 120 125")
+        self.__borders_input.setText("77.5 82.5 87.5 92.5 97.5 102.5 107.5 112.5 117.5 122.5 127.5")
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__borders_input, str_number, 1)
 
@@ -127,7 +127,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         axs[1].grid(True)
         len = np.asarray([borders[i + 1] - borders[i] for i in range(borders.shape[0] - 1)], dtype=float)
         axs[1].bar(borders[:-1], n, width=len, align="edge")
-        fig.show()
+        plt.show()
 
     def __init_button(self, str_number: int):
         button = QtWidgets.QPushButton()

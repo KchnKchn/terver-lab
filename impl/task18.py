@@ -5,12 +5,12 @@ import numpy as np
 import scipy.integrate
 
 class task18:
-    def __init__(self):
-        self.__device_count = None
-        self.__q = None
-        self.__d = None
-        self.__a = None
-        self.__k = None
+
+    __device_count = None
+    __q = None
+    __d = None
+    __a = None
+    __k = None
 
     def set_parameters(self, device_count: int, q: float, d: float):
         self.__device_count = device_count
@@ -48,7 +48,7 @@ class task18:
         for i in range(n):
             F_elem = self.__F(results[i])
             Fc_elem = i / n
-            norm = max(norm, max(abs(i / n - F_elem), abs(F_elem - (i - 1) / n)))
+            norm = max(norm, abs(F_elem - Fc_elem))
             F[i] = F_elem
             Fc[i] = Fc_elem
         return F, Fc, norm
@@ -75,27 +75,13 @@ class task18:
         return int(x / 10 ** -count) * 10 ** -count
 
     def __f(self, y: float):
-        result = 0.0
-        if (y >= self.__a):
-            result = self.__k ** self.__device_count / math.gamma(self.__device_count) * (y - self.__a) ** (self.__device_count - 1) * math.exp(-self.__k * (y - self.__a))
-        return result
+        return math.exp(-(y - self.__q * self.__device_count) ** 2 \
+            / (2 * self.__d * self.__device_count)) \
+            / math.sqrt(2 * math.pi * self.__d * self.__device_count)
 
     def __F(self, y: float):
-        result = 0.0
-        if (y >= self.__a):
-            result, _ = scipy.integrate.quad(self.__f, self.__a, y)
-            #f = lambda x:(x-self.__a)**(self.__device_count-1)*math.exp(-self.__k*(x-self.__a))
-            #result, _ = scipy.integrate.quad(f, self.__a, y)
-            #result *= self.__k ** self.__device_count / math.factorial(self.__device_count - 1)
-            #result = 1 / math.gamma(self.__device_count) * math.integral(exp(-t) * t ** (self.__device_count - 1), t=0..x)
-        return result
-
-    def __Fc(self, results: np.array, y: float):
-        Fc = 0.0
-        for result in results:
-            if result < y:
-                Fc += 1
-        return Fc / results.shape[0]
+        return 0.5 + 0.5 * math.erf((y - self.__q * self.__device_count) \
+            / math.sqrt(2 * self.__d * self.__device_count))
 
     def __get_device_time(self):
         return self.__a - math.log(1 - random.random()) / self.__k
@@ -105,7 +91,6 @@ class task18:
 
     def __calculate_k(self):
         return 1 / math.sqrt(self.__d)
-        # return self.__q / math.sqrt(self.__d)
     
     def __make_experiment(self):
         job_time = 0.0
