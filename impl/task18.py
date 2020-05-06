@@ -1,6 +1,5 @@
 import math
 import random
-import argparse
 import numpy as np
 import scipy.integrate
 
@@ -31,7 +30,7 @@ class task18:
         result.sort()
         return result
 
-    def get_metrics(self, result: np.array):
+    def get_metrics(self, result: np.ndarray):
         e = self.__device_count * (self.__a + 1 / self.__k)
         x = np.mean(result)
         d = self.__device_count / (self.__k ** 2)
@@ -40,7 +39,7 @@ class task18:
         r = result[-1] - result[0]
         return np.asarray([e, x, abs(e-x), d, s, abs(d-s), me, r], dtype=float)
 
-    def get_graphics(self, results: np.array):
+    def get_graphics(self, results: np.ndarray):
         n = results.shape[0]
         F = np.zeros(shape=(n), dtype=float)
         Fc = np.zeros(shape=(n), dtype=float)
@@ -53,11 +52,44 @@ class task18:
             Fc[i] = Fc_elem
         return F, Fc, norm
 
-    def get_histogram(self, results: np.array, borders: np.array):
+    def get_qj(self, borders: np.ndarray):
+        n = borders.shape[0]
+        qj = np.zeros(shape=(n+1), dtype=float)
+        qj[0] = self.__F(borders[0]) - self.__F(-math.inf)
+        for i in range(1, n):
+            qj[i] = self.__F(borders[i]) - self.__F(borders[i-1])
+        qj[n] = self.__F(math.inf) - self.__F(borders[n-1])
+        return qj
+
+    def get_r0(self, results: np.ndarray, borders: np.ndarray, qj: np.ndarray):
+        k = borders.shape[0]
         n = results.shape[0]
-        z_array = np.zeros(shape=(len(borders)-1), dtype=float)
-        f_array = np.zeros(shape=(len(borders)-1), dtype=float)
-        n_array = np.zeros(shape=(len(borders)-1), dtype=float)
+        n_array = np.zeros(shape=(k+1), dtype=int)
+        for i in range(1, k-1):
+            for result in results:
+                if result < borders[0]:
+                    n_array[0] += 1
+                elif borders[i] <= result < borders[i + 1]:
+                    n_array[i] += 1
+                elif borders[k-1] <= result:
+                    n_array[k] += 1
+        print(n_array)
+        print(qj)
+        r0 = 0.0
+        for i in range(k + 1):
+            r0 += ((n_array[i] - n * qj[i]) ** 2) / (n * qj[i])
+            print(r0)
+        return r0
+
+    def get_fr0(self, r0: float, k: int):
+        f = lambda x: (2**(-k/2))*(x**(k/2-1))*math.exp(-x/2)/math.gamma(k/2) if x > 0 else 0
+        return 1 - scipy.integrate.quad(f, 0, r0)[0]
+
+    def get_histogram(self, results: np.ndarray, borders: np.ndarray):
+        n = results.shape[0]
+        z_array = np.zeros(shape=(borders.shape[0]-1), dtype=float)
+        f_array = np.zeros(shape=(borders.shape[0]-1), dtype=float)
+        n_array = np.zeros(shape=(borders.shape[0]-1), dtype=float)
         norm = 0.0
         for i in range(borders.shape[0] - 1):
             z_array[i] = (borders[i] + borders[i + 1]) / 2

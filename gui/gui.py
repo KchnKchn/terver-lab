@@ -108,7 +108,10 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         #print tables
         metrics = self.__solver.get_metrics(result)
         z, f, n, norm = self.__solver.get_histogram(result, borders)
-        self.__update_tables(result, metrics, z, f, n, norm)
+        qj = self.__solver.get_qj(borders)
+        r0 = self.__solver.get_r0(result, borders, qj)
+        fr0 = self.__solver.get_fr0(r0, borders.shape[0])
+        self.__update_tables(result, metrics, z, f, n, norm, borders, qj, fr0, 0.5)
 
         #print graphics
         plt.close("all")
@@ -144,7 +147,7 @@ class ResultTable(QtWidgets.QTableWidget):
         cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         return cell
 
-    def update_table(self, result: np.array):
+    def update_table(self, result: np.ndarray):
         self.clear()
         self.setRowCount(1)
         self.setColumnCount(len(result))
@@ -164,7 +167,7 @@ class MetricsTable(QtWidgets.QTableWidget):
         cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         return cell
 
-    def update_table(self, metrics: np.array):
+    def update_table(self, metrics: np.ndarray):
         for i in range(8):
             self.setItem(0, i, self.__create_cell(str(metrics[i])))
         self.resizeColumnsToContents()
@@ -178,7 +181,7 @@ class HistogramTable(QtWidgets.QTableWidget):
         cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         return cell
 
-    def update_table(self, z_array: np.array, f_array: np.array, n_array: np.array):
+    def update_table(self, z_array: np.ndarray, f_array: np.ndarray, n_array: np.ndarray):
         self.clear()
         self.setRowCount(3)
         self.setColumnCount(z_array.shape[0])
@@ -186,6 +189,28 @@ class HistogramTable(QtWidgets.QTableWidget):
             self.setItem(0, i, self.__create_cell(str(z_array[i])))
             self.setItem(1, i, self.__create_cell(str(f_array[i])))
             self.setItem(2, i, self.__create_cell(str(n_array[i])))
+        self.resizeColumnsToContents()
+
+class KTable(QtWidgets.QTableWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def __create_cell(self, text: str):
+        cell = QtWidgets.QTableWidgetItem(text)
+        cell.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
+        return cell
+
+    def update_table(self, borders: np.ndarray, qj: np.ndarray):
+        self.clear()
+        self.setRowCount(2)
+        self.setColumnCount(qj.shape[0] - 1)
+        self.setItem(0, 0, self.__create_cell("(-inf;{})".format(borders[0])))
+        self.setItem(1, 0, self.__create_cell(str(qj[0])))
+        for i in range(1, qj.shape[0] - 2):
+            self.setItem(0, i, self.__create_cell("[{};{})".format(borders[i], borders[i+1])))
+            self.setItem(1, i, self.__create_cell(str(qj[i])))
+        self.setItem(0, qj.shape[0]-2, self.__create_cell("[{};+inf)".format(borders[qj.shape[0]-2])))
+        self.setItem(1, qj.shape[0]-2, self.__create_cell(str(qj[qj.shape[0]-1])))
         self.resizeColumnsToContents()
 
 class ResultGroup(QtWidgets.QGroupBox):
@@ -197,6 +222,9 @@ class ResultGroup(QtWidgets.QGroupBox):
         self.__init_metrics_table(2)
         self.__init_result_histogram(4)
         self.__init_max(6)
+        self.__init_k_table(7)
+        self.__init_fr0(9)
+        self.__init_h0(10)
 
     def __init_result_table(self, str_number: int):
         label = QtWidgets.QLabel()
@@ -221,17 +249,45 @@ class ResultGroup(QtWidgets.QGroupBox):
 
     def __init_max(self, str_number: int):
         label = QtWidgets.QLabel()
-        label.setText("max(Nj / N * |/\'j| - Fn(Zj)) =")
+        label.setText("max(Nj / N * |/\'j| - Fn(Zj)) = ")
         self.__max = QtWidgets.QLineEdit()
         self.__max.setReadOnly(True)
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__max, str_number, 1)
-    
-    def update_tables(self, result: np.array, metrics: np.array, z: np.array, f: np.array, n: np.array, norm: float):
+
+    def __init_k_table(self, str_number: int):
+        label = QtWidgets.QLabel()
+        label.setText("Гипотиза в виде теоретических вероятностей")
+        self.__ktable = KTable()
+        self.__grid.addWidget(label, str_number, 0, 1, 2)
+        self.__grid.addWidget(self.__ktable, str_number + 1, 0, 1, 2)
+
+    def __init_fr0(self, str_number: int):
+        label = QtWidgets.QLabel()
+        label.setText("F^(R0) = ")
+        self.__fr0 = QtWidgets.QLineEdit()
+        self.__fr0.setReadOnly(True)
+        self.__grid.addWidget(label, str_number, 0)
+        self.__grid.addWidget(self.__fr0, str_number, 1)
+
+    def __init_h0(self, str_number: int):
+        self.__h0 = QtWidgets.QLabel()
+        self.__h0.setText("")
+        self.__grid.addWidget(self.__h0, str_number, 0, 1, 2)
+
+    def update_tables(self, result: np.ndarray, metrics: np.ndarray,
+        z: np.ndarray, f: np.ndarray, n: np.ndarray, norm: float,
+        borders: np.ndarray, qj: np.ndarray, fr0: float, a: float):
         self.__result.update_table(result)
         self.__metrics.update_table(metrics)
         self.__histogram.update_table(z, f, n)
         self.__max.setText(str(norm))
+        self.__ktable.update_table(borders, qj)
+        self.__fr0.setText(str(fr0))
+        if fr0 >= a:
+            self.__h0.setText("Гипотиза H0 подтверждена")
+        else:
+            self.__h0.setText("Гипотиза H0 не подтверждена")
 
 class MainWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
