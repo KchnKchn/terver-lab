@@ -65,14 +65,15 @@ class task18:
         k = borders.shape[0]
         n = results.shape[0]
         n_array = np.zeros(shape=(k+1), dtype=int)
-        for i in range(1, k-1):
-            for result in results:
-                if result < borders[0]:
-                    n_array[0] += 1
-                elif borders[i] <= result < borders[i + 1]:
-                    n_array[i] += 1
-                elif borders[k-1] <= result:
-                    n_array[k] += 1
+        for result in results:
+            if result < borders[0]:
+                n_array[0] += 1
+            elif borders[k-1] <= result:
+                n_array[k] += 1
+            else:
+                for i in range(0, k-1):
+                    if borders[i] <= result < borders[i+1]:
+                        n_array[i+1] += 1
         print(n_array)
         print(qj)
         r0 = 0.0
@@ -82,7 +83,7 @@ class task18:
         return r0
 
     def get_fr0(self, r0: float, k: int):
-        f = lambda x: (2**(-k/2))*(x**(k/2-1))*math.exp(-x/2)/math.gamma(k/2) if x > 0 else 0
+        f = lambda x: (2**(-k/2))*(x**(k/2-1))*math.exp(-x/2)/math.gamma(k/2)
         return 1 - scipy.integrate.quad(f, 0, r0)[0]
 
     def get_histogram(self, results: np.ndarray, borders: np.ndarray):

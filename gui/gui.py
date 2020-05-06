@@ -72,7 +72,8 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         self.__grid = QtWidgets.QGridLayout(self)
         self.__init_experiments_parameter(0)
         self.__init_borders_parameter(1)
-        self.__init_button(2)
+        self.__init_a_parameter(2)
+        self.__init_button(3)
         self.__solver = None
 
     def set_solver(self, solver: task18):
@@ -94,6 +95,14 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         self.__grid.addWidget(label, str_number, 0)
         self.__grid.addWidget(self.__borders_input, str_number, 1)
 
+    def __init_a_parameter(self, str_number: int):
+        label = QtWidgets.QLabel()
+        label.setText("Уровень значимости a")
+        self.__a = QtWidgets.QLineEdit()
+        self.__a.setText("0.0")
+        self.__grid.addWidget(label, str_number, 0)
+        self.__grid.addWidget(self.__a, str_number, 1)
+
     def set_update_tables(self, f):
         self.__update_tables = f
 
@@ -111,7 +120,7 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
         qj = self.__solver.get_qj(borders)
         r0 = self.__solver.get_r0(result, borders, qj)
         fr0 = self.__solver.get_fr0(r0, borders.shape[0])
-        self.__update_tables(result, metrics, z, f, n, norm, borders, qj, fr0, 0.5)
+        self.__update_tables(result, metrics, z, f, n, norm, borders, qj, fr0, float(self.__a.text()))
 
         #print graphics
         plt.close("all")
@@ -203,14 +212,14 @@ class KTable(QtWidgets.QTableWidget):
     def update_table(self, borders: np.ndarray, qj: np.ndarray):
         self.clear()
         self.setRowCount(2)
-        self.setColumnCount(qj.shape[0] - 1)
+        self.setColumnCount(qj.shape[0])
         self.setItem(0, 0, self.__create_cell("(-inf;{})".format(borders[0])))
         self.setItem(1, 0, self.__create_cell(str(qj[0])))
-        for i in range(1, qj.shape[0] - 2):
-            self.setItem(0, i, self.__create_cell("[{};{})".format(borders[i], borders[i+1])))
-            self.setItem(1, i, self.__create_cell(str(qj[i])))
-        self.setItem(0, qj.shape[0]-2, self.__create_cell("[{};+inf)".format(borders[qj.shape[0]-2])))
-        self.setItem(1, qj.shape[0]-2, self.__create_cell(str(qj[qj.shape[0]-1])))
+        for i in range(qj.shape[0] - 2):
+            self.setItem(0, i+1, self.__create_cell("[{};{})".format(borders[i], borders[i+1])))
+            self.setItem(1, i+1, self.__create_cell(str(qj[i])))
+        self.setItem(0, qj.shape[0]-1, self.__create_cell("[{};+inf)".format(borders[qj.shape[0]-2])))
+        self.setItem(1, qj.shape[0]-1, self.__create_cell(str(qj[qj.shape[0]-1])))
         self.resizeColumnsToContents()
 
 class ResultGroup(QtWidgets.QGroupBox):
