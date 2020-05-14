@@ -75,16 +75,18 @@ class task18:
                     if borders[i] <= result < borders[i+1]:
                         n_array[i+1] += 1
         print(n_array)
-        print(qj)
+        print(qj, sum(qj))
         r0 = 0.0
         for i in range(k + 1):
-            r0 += ((n_array[i] - n * qj[i]) ** 2) / (n * qj[i])
-            print(r0)
+            r0 += (n_array[i] - n * qj[i]) ** 2 / (n * qj[i])
+        print(r0)
         return r0
 
     def get_fr0(self, r0: float, k: int):
-        f = lambda x: (2**(-k/2))*(x**(k/2-1))*math.exp(-x/2)/math.gamma(k/2)
-        return 1 - scipy.integrate.quad(f, 0, r0)[0]
+        f = lambda x: 2**(-k/2)*x**(k/2-1)*math.exp(-x/2)/math.gamma(k/2)
+        integral = scipy.integrate.quad(f, 0, r0)
+        print(integral)
+        return 1.0 - integral[0]
 
     def get_histogram(self, results: np.ndarray, borders: np.ndarray):
         n = results.shape[0]

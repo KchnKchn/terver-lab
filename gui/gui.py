@@ -217,7 +217,7 @@ class KTable(QtWidgets.QTableWidget):
         self.setItem(1, 0, self.__create_cell(str(qj[0])))
         for i in range(qj.shape[0] - 2):
             self.setItem(0, i+1, self.__create_cell("[{};{})".format(borders[i], borders[i+1])))
-            self.setItem(1, i+1, self.__create_cell(str(qj[i])))
+            self.setItem(1, i+1, self.__create_cell(str(qj[i+1])))
         self.setItem(0, qj.shape[0]-1, self.__create_cell("[{};+inf)".format(borders[qj.shape[0]-2])))
         self.setItem(1, qj.shape[0]-1, self.__create_cell(str(qj[qj.shape[0]-1])))
         self.resizeColumnsToContents()
@@ -293,10 +293,10 @@ class ResultGroup(QtWidgets.QGroupBox):
         self.__max.setText(str(norm))
         self.__ktable.update_table(borders, qj)
         self.__fr0.setText(str(fr0))
-        if fr0 >= a:
-            self.__h0.setText("Гипотиза H0 подтверждена")
-        else:
+        if fr0 < a:
             self.__h0.setText("Гипотиза H0 не подтверждена")
+        else:
+            self.__h0.setText("Гипотиза H0 подтверждена")
 
 class MainWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
