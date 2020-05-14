@@ -39,6 +39,28 @@ class task18:
         r = result[-1] - result[0]
         return np.asarray([e, x, abs(e-x), d, s, abs(d-s), me, r], dtype=float)
 
+    def get_Fc_graphic(self, results: np.ndarray):
+        n = results.shape[0]
+        Fc = np.zeros(shape=(n), dtype=float)
+        norm = 0
+        for i in range(n):
+            Fc[i] = i / n
+            norm = max(norm, abs(Fc[i] - self.__F(results[i])))
+        return Fc, norm
+
+    def get_F_graphic(self, results: np.ndarray):
+        h = (results[-1] - results[0]) / 1000
+        x = np.zeros(shape=(1001), dtype=float)
+        for i in range(1001):
+            x[i] = results[0] + i * h
+        x = np.concatenate((x, results))
+        x.sort()
+        n = x.shape[0]
+        F = np.zeros(shape=(n), dtype=float)
+        for i in range(n):
+            F[i] = self.__F(x[i])
+        return x, F
+
     def get_graphics(self, results: np.ndarray):
         n = results.shape[0]
         F = np.zeros(shape=(n), dtype=float)
@@ -74,18 +96,14 @@ class task18:
                 for i in range(0, k-1):
                     if borders[i] <= result < borders[i+1]:
                         n_array[i+1] += 1
-        print(n_array)
-        print(qj, sum(qj))
         r0 = 0.0
         for i in range(k + 1):
             r0 += (n_array[i] - n * qj[i]) ** 2 / (n * qj[i])
-        print(r0)
         return r0
 
     def get_fr0(self, r0: float, k: int):
         f = lambda x: 2**(-k/2)*x**(k/2-1)*math.exp(-x/2)/math.gamma(k/2)
         integral = scipy.integrate.quad(f, 0, r0)
-        print(integral)
         return 1.0 - integral[0]
 
     def get_histogram(self, results: np.ndarray, borders: np.ndarray):

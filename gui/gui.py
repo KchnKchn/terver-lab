@@ -124,15 +124,17 @@ class ExperimentsParametersGroup(QtWidgets.QGroupBox):
 
         #print graphics
         plt.close("all")
-        F, Fc, norm = self.__solver.get_graphics(result)
+        #F, Fc, norm = self.__solver.get_graphics(result)
+        Fc, norm = self.__solver.get_Fc_graphic(result)
+        x, F = self.__solver.get_F_graphic(result)
         fig, axs = plt.subplots(2, 1, num="Графики")
 
         axs[0].set_title("Функция распределения и выборочная функция распределения")
         axs[0].set_xlabel("Значения случайной величины")
         axs[0].set_ylabel("Вероятность события")
         axs[0].grid(True)
-        axs[0].plot(result, F, label="Аналитическая функция распределения")
-        axs[0].step(result, Fc, label="Выборочная функция распределения")
+        axs[0].plot(x, F, label="Аналитическая функция распределения")
+        axs[0].step(result, Fc, label="Выборочная функция распределения", where="pre")
         axs[0].legend(title="D = {0:0.3f}".format(norm), loc="lower right")
 
         axs[1].set_title("Гистограмма")
